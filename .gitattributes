@@ -1,0 +1,14 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Shell scripts
+*.sh text eol=lf
+
+# Batch scripts
+*.bat text eol=crlf
+
+# Markdown files
+*.md text eol=auto
+
+# JSON files
+*.json text eol=auto
