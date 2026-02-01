@@ -4,6 +4,9 @@
 # Created by H190K
 # GitHub: https://github.com/H190K/terminalLLMsupdate-script
 
+# Set npm optimization flags for faster operations
+NPM_FLAGS="--quiet --no-audit --no-fund"
+
 # Check if Node.js is installed
 if ! command -v npm &> /dev/null; then
     clear
@@ -31,14 +34,20 @@ CHECK_AND_INSTALL() {
     local package_name=$1
     local display_name=$2
 
-    if ! npm list -g "$package_name" &> /dev/null; then
+    # Get npm global prefix and check if package directory exists
+    # (faster than npm list, no network calls)
+    local npm_global_dir
+    npm_global_dir=$(npm prefix -g)
+    local package_check_path="$npm_global_dir/node_modules/$package_name"
+
+    if [ ! -d "$package_check_path" ]; then
         echo ""
         echo "[WARNING] $display_name is not installed!"
         echo ""
         read -p "Do you want to install $display_name now? (y/n): " install_choice
         if [[ "$install_choice" =~ ^[Yy]$ ]]; then
             echo "Installing $display_name..."
-            npm install -g "$package_name"
+            npm install -g "$package_name" $NPM_FLAGS
             local install_error=$?
             if [ $install_error -eq 0 ]; then
                 echo "[SUCCESS] $display_name installed successfully!"
@@ -103,7 +112,7 @@ UPDATE_CLAUDE() {
         return
     fi
     echo ""
-    npm update -g @anthropic-ai/claude-code
+    npm update -g @anthropic-ai/claude-code $NPM_FLAGS
     claude_error=$?
     echo ""
     if [ $claude_error -eq 0 ]; then
@@ -128,7 +137,7 @@ UPDATE_GEMINI() {
         return
     fi
     echo ""
-    npm update -g @google/gemini-cli
+    npm update -g @google/gemini-cli $NPM_FLAGS
     gemini_error=$?
     echo ""
     if [ $gemini_error -eq 0 ]; then
@@ -153,7 +162,7 @@ UPDATE_OPENAI() {
         return
     fi
     echo ""
-    npm update -g openai
+    npm update -g openai $NPM_FLAGS
     openai_error=$?
     echo ""
     if [ $openai_error -eq 0 ]; then
@@ -172,13 +181,13 @@ UPDATE_OPENCODE() {
     echo "        UPDATING OPENCODE"
     echo "================================================"
     echo ""
-    CHECK_AND_INSTALL "opencode" "OpenCode"
+    CHECK_AND_INSTALL "opencode-ai" "OpenCode"
     if [ $? -ne 0 ]; then
         MAIN_MENU
         return
     fi
     echo ""
-    npm update -g opencode
+    npm update -g opencode-ai $NPM_FLAGS
     opencode_error=$?
     echo ""
     if [ $opencode_error -eq 0 ]; then
@@ -202,7 +211,7 @@ UPDATE_ALL() {
     echo "------------------------------------------------"
     CHECK_AND_INSTALL "@anthropic-ai/claude-code" "Claude Code"
     if [ $? -eq 0 ]; then
-        npm update -g @anthropic-ai/claude-code
+        npm update -g @anthropic-ai/claude-code $NPM_FLAGS
         claude_error=$?
         if [ $claude_error -eq 0 ]; then
             echo "[SUCCESS] Claude Code updated successfully!"
@@ -219,7 +228,7 @@ UPDATE_ALL() {
     echo "------------------------------------------------"
     CHECK_AND_INSTALL "@google/gemini-cli" "Gemini CLI"
     if [ $? -eq 0 ]; then
-        npm update -g @google/gemini-cli
+        npm update -g @google/gemini-cli $NPM_FLAGS
         gemini_error=$?
         if [ $gemini_error -eq 0 ]; then
             echo "[SUCCESS] Gemini CLI updated successfully!"
@@ -236,7 +245,7 @@ UPDATE_ALL() {
     echo "------------------------------------------------"
     CHECK_AND_INSTALL "openai" "OpenAI CLI"
     if [ $? -eq 0 ]; then
-        npm update -g openai
+        npm update -g openai $NPM_FLAGS
         openai_error=$?
         if [ $openai_error -eq 0 ]; then
             echo "[SUCCESS] OpenAI CLI updated successfully!"
@@ -251,9 +260,9 @@ UPDATE_ALL() {
 
     echo "[4/4] Updating OpenCode..."
     echo "------------------------------------------------"
-    CHECK_AND_INSTALL "opencode" "OpenCode"
+    CHECK_AND_INSTALL "opencode-ai" "OpenCode"
     if [ $? -eq 0 ]; then
-        npm update -g opencode
+        npm update -g opencode-ai $NPM_FLAGS
         opencode_error=$?
         if [ $opencode_error -eq 0 ]; then
             echo "[SUCCESS] OpenCode updated successfully!"
@@ -322,7 +331,7 @@ MULTI_SELECT() {
         echo "------------------------------------------------"
         CHECK_AND_INSTALL "@anthropic-ai/claude-code" "Claude Code"
         if [ $? -eq 0 ]; then
-            npm update -g @anthropic-ai/claude-code
+            npm update -g @anthropic-ai/claude-code $NPM_FLAGS
             claude_error=$?
             if [ $claude_error -eq 0 ]; then
                 echo "[SUCCESS] Claude Code updated successfully!"
@@ -341,7 +350,7 @@ MULTI_SELECT() {
         echo "------------------------------------------------"
         CHECK_AND_INSTALL "@google/gemini-cli" "Gemini CLI"
         if [ $? -eq 0 ]; then
-            npm update -g @google/gemini-cli
+            npm update -g @google/gemini-cli $NPM_FLAGS
             gemini_error=$?
             if [ $gemini_error -eq 0 ]; then
                 echo "[SUCCESS] Gemini CLI updated successfully!"
@@ -360,7 +369,7 @@ MULTI_SELECT() {
         echo "------------------------------------------------"
         CHECK_AND_INSTALL "openai" "OpenAI CLI"
         if [ $? -eq 0 ]; then
-            npm update -g openai
+            npm update -g openai $NPM_FLAGS
             openai_error=$?
             if [ $openai_error -eq 0 ]; then
                 echo "[SUCCESS] OpenAI CLI updated successfully!"
@@ -377,9 +386,9 @@ MULTI_SELECT() {
     if [ $update_opencode -eq 1 ]; then
         echo "[4/?] Updating OpenCode..."
         echo "------------------------------------------------"
-        CHECK_AND_INSTALL "opencode" "OpenCode"
+        CHECK_AND_INSTALL "opencode-ai" "OpenCode"
         if [ $? -eq 0 ]; then
-            npm update -g opencode
+            npm update -g opencode-ai $NPM_FLAGS
             opencode_error=$?
             if [ $opencode_error -eq 0 ]; then
                 echo "[SUCCESS] OpenCode updated successfully!"

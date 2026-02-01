@@ -6,6 +6,9 @@ REM GitHub: https://github.com/H190K/terminalLLMsupdate-script
 setlocal enabledelayedexpansion
 title AI Tools Updater
 
+REM Set npm optimization flags for faster operations
+set NPM_FLAGS=--quiet --no-audit --no-fund
+
 REM Check if Node.js is installed
 where npm >nul 2>nul
 if %errorlevel% neq 0 (
@@ -67,15 +70,20 @@ goto :MAIN_MENU
 :CHECK_AND_INSTALL
 set package_name=%~1
 set display_name=%~2
-npm list -g %package_name% >nul 2>nul
-if %errorlevel% neq 0 (
+
+REM Get npm global prefix and check if package directory exists
+for /f "delims=" %%i in ('npm prefix -g') do set npm_global_dir=%%i
+set "package_check_path=!npm_global_dir!\node_modules\%package_name%"
+
+REM Check if package directory exists (faster than npm list, no network calls)
+if not exist "!package_check_path!" (
     echo.
     echo [WARNING] %display_name% is not installed!
     echo.
     set /p install_choice="Do you want to install %display_name% now? (y/n): "
     if /i "!install_choice!"=="y" (
         echo Installing %display_name%...
-        call npm install -g %package_name%
+        call npm install -g %package_name% %NPM_FLAGS%
         set install_error=!errorlevel!
         if !install_error! equ 0 (
             echo [SUCCESS] %display_name% installed successfully!
@@ -101,7 +109,7 @@ echo.
 call :CHECK_AND_INSTALL "@anthropic-ai/claude-code" "Claude Code"
 if %errorlevel% neq 0 goto :MAIN_MENU
 echo.
-call npm update -g @anthropic-ai/claude-code
+call npm update -g @anthropic-ai/claude-code %NPM_FLAGS%
 set claude_error=!errorlevel!
 echo.
 if !claude_error! equ 0 (
@@ -122,7 +130,7 @@ echo.
 call :CHECK_AND_INSTALL "@google/gemini-cli" "Gemini CLI"
 if %errorlevel% neq 0 goto :MAIN_MENU
 echo.
-call npm update -g @google/gemini-cli
+call npm update -g @google/gemini-cli %NPM_FLAGS%
 set gemini_error=!errorlevel!
 echo.
 if !gemini_error! equ 0 (
@@ -143,7 +151,7 @@ echo.
 call :CHECK_AND_INSTALL "openai" "OpenAI CLI"
 if %errorlevel% neq 0 goto :MAIN_MENU
 echo.
-call npm update -g openai
+call npm update -g openai %NPM_FLAGS%
 set openai_error=!errorlevel!
 echo.
 if !openai_error! equ 0 (
@@ -161,10 +169,10 @@ echo ================================================
 echo         UPDATING OPENCODE
 echo ================================================
 echo.
-call :CHECK_AND_INSTALL "opencode" "OpenCode"
+call :CHECK_AND_INSTALL "opencode-ai" "OpenCode"
 if %errorlevel% neq 0 goto :MAIN_MENU
 echo.
-call npm update -g opencode
+call npm update -g opencode-ai %NPM_FLAGS%
 set opencode_error=!errorlevel!
 echo.
 if !opencode_error! equ 0 (
@@ -187,7 +195,7 @@ echo [1/4] Updating Claude Code...
 echo ------------------------------------------------
 call :CHECK_AND_INSTALL "@anthropic-ai/claude-code" "Claude Code"
 if %errorlevel% equ 0 (
-    call npm update -g @anthropic-ai/claude-code
+    call npm update -g @anthropic-ai/claude-code %NPM_FLAGS%
     set claude_error=!errorlevel!
     if !claude_error! equ 0 (
         echo [SUCCESS] Claude Code updated successfully!
@@ -204,7 +212,7 @@ echo [2/4] Updating Gemini CLI...
 echo ------------------------------------------------
 call :CHECK_AND_INSTALL "@google/gemini-cli" "Gemini CLI"
 if %errorlevel% equ 0 (
-    call npm update -g @google/gemini-cli
+    call npm update -g @google/gemini-cli %NPM_FLAGS%
     set gemini_error=!errorlevel!
     if !gemini_error! equ 0 (
         echo [SUCCESS] Gemini CLI updated successfully!
@@ -221,7 +229,7 @@ echo [3/4] Updating OpenAI CLI...
 echo ------------------------------------------------
 call :CHECK_AND_INSTALL "openai" "OpenAI CLI"
 if %errorlevel% equ 0 (
-    call npm update -g openai
+    call npm update -g openai %NPM_FLAGS%
     set openai_error=!errorlevel!
     if !openai_error! equ 0 (
         echo [SUCCESS] OpenAI CLI updated successfully!
@@ -236,9 +244,9 @@ echo.
 
 echo [4/4] Updating OpenCode...
 echo ------------------------------------------------
-call :CHECK_AND_INSTALL "opencode" "OpenCode"
+call :CHECK_AND_INSTALL "opencode-ai" "OpenCode"
 if %errorlevel% equ 0 (
-    call npm update -g opencode
+    call npm update -g opencode-ai %NPM_FLAGS%
     set opencode_error=!errorlevel!
     if !opencode_error! equ 0 (
         echo [SUCCESS] OpenCode updated successfully!
@@ -304,7 +312,7 @@ if !update_claude! equ 1 (
     echo ------------------------------------------------
     call :CHECK_AND_INSTALL "@anthropic-ai/claude-code" "Claude Code"
     if %errorlevel% equ 0 (
-        call npm update -g @anthropic-ai/claude-code
+        call npm update -g @anthropic-ai/claude-code %NPM_FLAGS%
         set claude_error=!errorlevel!
         if !claude_error! equ 0 (
             echo [SUCCESS] Claude Code updated successfully!
@@ -323,7 +331,7 @@ if !update_gemini! equ 1 (
     echo ------------------------------------------------
     call :CHECK_AND_INSTALL "@google/gemini-cli" "Gemini CLI"
     if %errorlevel% equ 0 (
-        call npm update -g @google/gemini-cli
+        call npm update -g @google/gemini-cli %NPM_FLAGS%
         set gemini_error=!errorlevel!
         if !gemini_error! equ 0 (
             echo [SUCCESS] Gemini CLI updated successfully!
@@ -342,7 +350,7 @@ if !update_openai! equ 1 (
     echo ------------------------------------------------
     call :CHECK_AND_INSTALL "openai" "OpenAI CLI"
     if %errorlevel% equ 0 (
-        call npm update -g openai
+        call npm update -g openai %NPM_FLAGS%
         set openai_error=!errorlevel!
         if !openai_error! equ 0 (
             echo [SUCCESS] OpenAI CLI updated successfully!
@@ -359,9 +367,9 @@ if !update_openai! equ 1 (
 if !update_opencode! equ 1 (
     echo [4/?] Updating OpenCode...
     echo ------------------------------------------------
-    call :CHECK_AND_INSTALL "opencode" "OpenCode"
+    call :CHECK_AND_INSTALL "opencode-ai" "OpenCode"
     if %errorlevel% equ 0 (
-        call npm update -g opencode
+        call npm update -g opencode-ai %NPM_FLAGS%
         set opencode_error=!errorlevel!
         if !opencode_error! equ 0 (
             echo [SUCCESS] OpenCode updated successfully!
