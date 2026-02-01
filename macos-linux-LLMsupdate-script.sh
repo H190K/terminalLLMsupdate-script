@@ -34,20 +34,16 @@ CHECK_AND_INSTALL() {
     local package_name=$1
     local display_name=$2
 
-    # Get npm global prefix and check if package directory exists
-    # (faster than npm list, no network calls)
-    local npm_global_dir
-    npm_global_dir=$(npm prefix -g)
-    local package_check_path="$npm_global_dir/node_modules/$package_name"
-
-    if [ ! -d "$package_check_path" ]; then
+    # Check if package is installed globally using npm list
+    # This is more reliable than checking directories directly
+    if ! npm list -g "$package_name" --depth=0 &> /dev/null; then
         echo ""
         echo "[WARNING] $display_name is not installed!"
         echo ""
         read -p "Do you want to install $display_name now? (y/n): " install_choice
         if [[ "$install_choice" =~ ^[Yy]$ ]]; then
             echo "Installing $display_name..."
-            npm install -g "$package_name" $NPM_FLAGS
+            npm install -g "$package_name" $NPM_FLAGS --force
             local install_error=$?
             if [ $install_error -eq 0 ]; then
                 echo "[SUCCESS] $display_name installed successfully!"
