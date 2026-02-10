@@ -71,12 +71,10 @@ goto :MAIN_MENU
 set package_name=%~1
 set display_name=%~2
 
-REM Get npm global prefix and check if package directory exists
-for /f "delims=" %%i in ('npm prefix -g') do set npm_global_dir=%%i
-set "package_check_path=!npm_global_dir!\node_modules\%package_name%"
-
-REM Check if package directory exists (faster than npm list, no network calls)
-if not exist "!package_check_path!" (
+REM Check if package is installed globally using npm list
+REM This is more reliable than checking directories directly and has no hardcoded paths
+npm list -g %package_name% --depth=0 >nul 2>&1
+if %errorlevel% neq 0 (
     echo.
     echo [WARNING] %display_name% is not installed!
     echo.
