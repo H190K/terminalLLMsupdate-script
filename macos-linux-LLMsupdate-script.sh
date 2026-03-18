@@ -6,6 +6,7 @@
 
 # Set npm optimization flags for faster operations
 NPM_FLAGS="--quiet --no-audit --no-fund"
+QWEN_NPM_FLAGS="--no-audit --no-fund"
 
 # Check if Node.js is installed
 if ! command -v npm &> /dev/null; then
@@ -61,6 +62,59 @@ CHECK_AND_INSTALL() {
     return 0
 }
 
+CHECK_QWEN_NODE_VERSION() {
+    local qwen_node_major
+    qwen_node_major=$(node -p "process.versions.node.split('.')[0]" 2>/dev/null)
+
+    if [ -z "$qwen_node_major" ]; then
+        echo "[ERROR] Unable to detect your Node.js version."
+        pause
+        return 1
+    fi
+
+    if [ "$qwen_node_major" -lt 20 ]; then
+        echo ""
+        echo "[ERROR] Qwen CLI requires Node.js 20 or newer."
+        echo "[INFO] Detected Node.js major version: $qwen_node_major"
+        echo "[INFO] Please update Node.js from https://nodejs.org/ and try again."
+        echo ""
+        pause
+        return 1
+    fi
+
+    return 0
+}
+
+CHECK_AND_INSTALL_QWEN() {
+    CHECK_QWEN_NODE_VERSION || return 1
+
+    if ! npm list -g "@qwen-code/qwen-code" --depth=0 &> /dev/null; then
+        echo ""
+        echo "[WARNING] Qwen CLI is not installed!"
+        echo ""
+        read -p "Do you want to install Qwen CLI now? (y/n): " install_choice
+        if [[ "$install_choice" =~ ^[Yy]$ ]]; then
+            echo "Installing Qwen CLI..."
+            echo "[INFO] This can take a while because npm may download additional dependencies."
+            npm install -g @qwen-code/qwen-code@latest $QWEN_NPM_FLAGS
+            local install_error=$?
+            if [ $install_error -eq 0 ]; then
+                echo "[SUCCESS] Qwen CLI installed successfully!"
+            else
+                echo "[ERROR] Failed to install Qwen CLI - Error Code: $install_error"
+                pause
+                return 1
+            fi
+        else
+            echo "Skipping Qwen CLI..."
+            pause
+            return 1
+        fi
+    fi
+
+    return 0
+}
+
 MAIN_MENU() {
     clear
     echo "================================================"
@@ -72,9 +126,10 @@ MAIN_MENU() {
     echo "  [1] Update Claude Code"
     echo "  [2] Update Gemini CLI"
     echo "  [3] Update OpenAI CLI"
-    echo "  [4] Update OpenCode"
-    echo "  [5] Update ALL tools"
-    echo "  [6] Choose multiple tools"
+    echo "  [4] Update Qwen CLI"
+    echo "  [5] Update OpenCode"
+    echo "  [6] Update ALL tools"
+    echo "  [7] Choose multiple tools"
     echo "  [0] Exit"
     echo ""
     echo "================================================"
@@ -82,16 +137,17 @@ MAIN_MENU() {
     echo "  Created by H190K"
     echo "  GitHub: https://github.com/H190K/terminalLLMsupdate-script"
     echo ""
-    read -p "Enter your choice (0-6): " choice
+    read -p "Enter your choice (0-7): " choice
 
     case $choice in
         0) EXIT ;;
         1) UPDATE_CLAUDE ;;
         2) UPDATE_GEMINI ;;
         3) UPDATE_OPENAI ;;
-        4) UPDATE_OPENCODE ;;
-        5) UPDATE_ALL ;;
-        6) MULTI_SELECT ;;
+        4) UPDATE_QWEN ;;
+        5) UPDATE_OPENCODE ;;
+        6) UPDATE_ALL ;;
+        7) MULTI_SELECT ;;
         *) echo "Invalid choice! Try again."; pause; MAIN_MENU ;;
     esac
 }
@@ -171,6 +227,33 @@ UPDATE_OPENAI() {
     MAIN_MENU
 }
 
+UPDATE_QWEN() {
+    clear
+    echo "================================================"
+    echo "        UPDATING QWEN CLI"
+    echo "================================================"
+    echo ""
+    CHECK_AND_INSTALL_QWEN
+    if [ $? -ne 0 ]; then
+        MAIN_MENU
+        return
+    fi
+    echo ""
+    echo "[INFO] Updating Qwen CLI via npm install -g @qwen-code/qwen-code@latest"
+    echo "[INFO] This can take a while because npm may download additional dependencies."
+    npm install -g @qwen-code/qwen-code@latest $QWEN_NPM_FLAGS
+    qwen_error=$?
+    echo ""
+    if [ $qwen_error -eq 0 ]; then
+        echo "[SUCCESS] Qwen CLI updated successfully!"
+    else
+        echo "[ERROR] Failed to update Qwen CLI - Error Code: $qwen_error"
+    fi
+    echo ""
+    pause
+    MAIN_MENU
+}
+
 UPDATE_OPENCODE() {
     clear
     echo "================================================"
@@ -203,7 +286,7 @@ UPDATE_ALL() {
     echo "================================================"
     echo ""
 
-    echo "[1/4] Updating Claude Code..."
+    echo "[1/5] Updating Claude Code..."
     echo "------------------------------------------------"
     CHECK_AND_INSTALL "@anthropic-ai/claude-code" "Claude Code"
     if [ $? -eq 0 ]; then
@@ -220,7 +303,7 @@ UPDATE_ALL() {
     fi
     echo ""
 
-    echo "[2/4] Updating Gemini CLI..."
+    echo "[2/5] Updating Gemini CLI..."
     echo "------------------------------------------------"
     CHECK_AND_INSTALL "@google/gemini-cli" "Gemini CLI"
     if [ $? -eq 0 ]; then
@@ -237,7 +320,7 @@ UPDATE_ALL() {
     fi
     echo ""
 
-    echo "[3/4] Updating OpenAI CLI..."
+    echo "[3/5] Updating OpenAI CLI..."
     echo "------------------------------------------------"
     CHECK_AND_INSTALL "openai" "OpenAI CLI"
     if [ $? -eq 0 ]; then
@@ -254,7 +337,26 @@ UPDATE_ALL() {
     fi
     echo ""
 
-    echo "[4/4] Updating OpenCode..."
+    echo "[4/5] Updating Qwen CLI..."
+    echo "------------------------------------------------"
+    CHECK_AND_INSTALL_QWEN
+    if [ $? -eq 0 ]; then
+        echo "[INFO] Updating Qwen CLI via npm install -g @qwen-code/qwen-code@latest"
+        echo "[INFO] This can take a while because npm may download additional dependencies."
+        npm install -g @qwen-code/qwen-code@latest $QWEN_NPM_FLAGS
+        qwen_error=$?
+        if [ $qwen_error -eq 0 ]; then
+            echo "[SUCCESS] Qwen CLI updated successfully!"
+        else
+            echo "[ERROR] Failed to update Qwen CLI - Error Code: $qwen_error"
+        fi
+    else
+        qwen_error=1
+        echo "[SKIPPED] Qwen CLI was not installed."
+    fi
+    echo ""
+
+    echo "[5/5] Updating OpenCode..."
     echo "------------------------------------------------"
     CHECK_AND_INSTALL "opencode-ai" "OpenCode"
     if [ $? -eq 0 ]; then
@@ -279,6 +381,7 @@ UPDATE_ALL() {
     [ $claude_error -eq 0 ] && echo "- Claude Code: UP TO DATE" || echo "- Claude Code: FAILED/SKIPPED"
     [ $gemini_error -eq 0 ] && echo "- Gemini CLI: UP TO DATE" || echo "- Gemini CLI: FAILED/SKIPPED"
     [ $openai_error -eq 0 ] && echo "- OpenAI CLI: UP TO DATE" || echo "- OpenAI CLI: FAILED/SKIPPED"
+    [ $qwen_error -eq 0 ] && echo "- Qwen CLI: UP TO DATE" || echo "- Qwen CLI: FAILED/SKIPPED"
     [ $opencode_error -eq 0 ] && echo "- OpenCode: UP TO DATE" || echo "- OpenCode: FAILED/SKIPPED"
     echo ""
     pause
@@ -297,7 +400,8 @@ MULTI_SELECT() {
     echo "  [1] Claude Code"
     echo "  [2] Gemini CLI"
     echo "  [3] OpenAI CLI"
-    echo "  [4] OpenCode"
+    echo "  [4] Qwen CLI"
+    echo "  [5] OpenCode"
     echo ""
     read -p "Your selection: " selections
     echo ""
@@ -305,6 +409,7 @@ MULTI_SELECT() {
     update_claude=0
     update_gemini=0
     update_openai=0
+    update_qwen=0
     update_opencode=0
 
     for i in $selections; do
@@ -312,7 +417,8 @@ MULTI_SELECT() {
             1) update_claude=1 ;;
             2) update_gemini=1 ;;
             3) update_openai=1 ;;
-            4) update_opencode=1 ;;
+            4) update_qwen=1 ;;
+            5) update_opencode=1 ;;
         esac
     done
 
@@ -379,8 +485,29 @@ MULTI_SELECT() {
         echo ""
     fi
 
+    if [ $update_qwen -eq 1 ]; then
+        echo "[4/?] Updating Qwen CLI..."
+        echo "------------------------------------------------"
+        CHECK_AND_INSTALL_QWEN
+        if [ $? -eq 0 ]; then
+            echo "[INFO] Updating Qwen CLI via npm install -g @qwen-code/qwen-code@latest"
+            echo "[INFO] This can take a while because npm may download additional dependencies."
+            npm install -g @qwen-code/qwen-code@latest $QWEN_NPM_FLAGS
+            qwen_error=$?
+            if [ $qwen_error -eq 0 ]; then
+                echo "[SUCCESS] Qwen CLI updated successfully!"
+            else
+                echo "[ERROR] Failed to update Qwen CLI - Error Code: $qwen_error"
+            fi
+        else
+            qwen_error=1
+            echo "[SKIPPED] Qwen CLI was not installed."
+        fi
+        echo ""
+    fi
+
     if [ $update_opencode -eq 1 ]; then
-        echo "[4/?] Updating OpenCode..."
+        echo "[5/?] Updating OpenCode..."
         echo "------------------------------------------------"
         CHECK_AND_INSTALL "opencode-ai" "OpenCode"
         if [ $? -eq 0 ]; then
@@ -417,6 +544,11 @@ MULTI_SELECT() {
         [ $openai_error -eq 0 ] && echo "- OpenAI CLI: UP TO DATE" || echo "- OpenAI CLI: FAILED/SKIPPED"
     else
         echo "- OpenAI CLI: SKIPPED"
+    fi
+    if [ $update_qwen -eq 1 ]; then
+        [ $qwen_error -eq 0 ] && echo "- Qwen CLI: UP TO DATE" || echo "- Qwen CLI: FAILED/SKIPPED"
+    else
+        echo "- Qwen CLI: SKIPPED"
     fi
     if [ $update_opencode -eq 1 ]; then
         [ $opencode_error -eq 0 ] && echo "- OpenCode: UP TO DATE" || echo "- OpenCode: FAILED/SKIPPED"

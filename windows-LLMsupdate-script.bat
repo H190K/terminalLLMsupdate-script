@@ -8,6 +8,7 @@ title AI Tools Updater
 
 REM Set npm optimization flags for faster operations
 set NPM_FLAGS=--quiet --no-audit --no-fund
+set QWEN_NPM_FLAGS=--no-audit --no-fund
 
 REM Check if Node.js is installed
 where npm >nul 2>nul
@@ -44,9 +45,10 @@ echo.
 echo   [1] Update Claude Code
 echo   [2] Update Gemini CLI
 echo   [3] Update OpenAI CLI
-echo   [4] Update OpenCode
-echo   [5] Update ALL tools
-echo   [6] Choose multiple tools
+echo   [4] Update Qwen CLI
+echo   [5] Update OpenCode
+echo   [6] Update ALL tools
+echo   [7] Choose multiple tools
 echo   [0] Exit
 echo.
 echo ================================================
@@ -54,15 +56,16 @@ echo.
 echo   Created by H190K
 echo   GitHub: https://github.com/H190K/terminalLLMsupdate-script
 echo.
-set /p choice="Enter your choice (0-6): "
+set /p choice="Enter your choice (0-7): "
 
 if "%choice%"=="0" goto :EXIT
 if "%choice%"=="1" goto :UPDATE_CLAUDE
 if "%choice%"=="2" goto :UPDATE_GEMINI
 if "%choice%"=="3" goto :UPDATE_OPENAI
-if "%choice%"=="4" goto :UPDATE_OPENCODE
-if "%choice%"=="5" goto :UPDATE_ALL
-if "%choice%"=="6" goto :MULTI_SELECT
+if "%choice%"=="4" goto :UPDATE_QWEN
+if "%choice%"=="5" goto :UPDATE_OPENCODE
+if "%choice%"=="6" goto :UPDATE_ALL
+if "%choice%"=="7" goto :MULTI_SELECT
 echo Invalid choice! Try again.
 pause
 goto :MAIN_MENU
@@ -73,7 +76,7 @@ set display_name=%~2
 
 REM Check if package is installed globally using npm list
 REM This is more reliable than checking directories directly and has no hardcoded paths
-npm list -g %package_name% --depth=0 >nul 2>&1
+call npm list -g %package_name% --depth=0 >nul 2>&1
 if %errorlevel% neq 0 (
     echo.
     echo [WARNING] %display_name% is not installed!
@@ -98,6 +101,55 @@ if %errorlevel% neq 0 (
 )
 exit /b 0
 
+:CHECK_QWEN_NODE_VERSION
+set "qwen_node_major="
+for /f %%v in ('node -p "process.versions.node.split('.')[0]"') do set qwen_node_major=%%v
+if not defined qwen_node_major (
+    echo [ERROR] Unable to detect your Node.js version.
+    set /p dummy="Press Enter to continue..."
+    exit /b 1
+)
+if !qwen_node_major! lss 20 (
+    echo.
+    echo [ERROR] Qwen CLI requires Node.js 20 or newer.
+    echo [INFO] Detected Node.js major version: !qwen_node_major!
+    echo [INFO] Please update Node.js from https://nodejs.org/ and try again.
+    echo.
+    set /p dummy="Press Enter to continue..."
+    exit /b 1
+)
+exit /b 0
+
+:CHECK_AND_INSTALL_QWEN
+call :CHECK_QWEN_NODE_VERSION
+if !errorlevel! neq 0 exit /b 1
+
+call npm list -g @qwen-code/qwen-code --depth=0 >nul 2>&1
+if %errorlevel% neq 0 (
+    echo.
+    echo [WARNING] Qwen CLI is not installed!
+    echo.
+    set /p install_choice="Do you want to install Qwen CLI now? (y/n): "
+    if /i "!install_choice!"=="y" (
+        echo Installing Qwen CLI...
+        echo [INFO] This can take a while because npm may download additional dependencies.
+        call npm install -g @qwen-code/qwen-code@latest %QWEN_NPM_FLAGS%
+        set install_error=!errorlevel!
+        if !install_error! equ 0 (
+            echo [SUCCESS] Qwen CLI installed successfully!
+        ) else (
+            echo [ERROR] Failed to install Qwen CLI - Error Code: !install_error!
+            set /p dummy="Press Enter to continue..."
+            exit /b 1
+        )
+    ) else (
+        echo Skipping Qwen CLI...
+        set /p dummy="Press Enter to continue..."
+        exit /b 1
+    )
+)
+exit /b 0
+
 :UPDATE_CLAUDE
 cls
 echo ================================================
@@ -105,7 +157,7 @@ echo         UPDATING CLAUDE CODE
 echo ================================================
 echo.
 call :CHECK_AND_INSTALL "@anthropic-ai/claude-code" "Claude Code"
-if %errorlevel% neq 0 goto :MAIN_MENU
+if !errorlevel! neq 0 goto :MAIN_MENU
 echo.
 call npm update -g @anthropic-ai/claude-code %NPM_FLAGS%
 set claude_error=!errorlevel!
@@ -126,7 +178,7 @@ echo         UPDATING GEMINI CLI
 echo ================================================
 echo.
 call :CHECK_AND_INSTALL "@google/gemini-cli" "Gemini CLI"
-if %errorlevel% neq 0 goto :MAIN_MENU
+if !errorlevel! neq 0 goto :MAIN_MENU
 echo.
 call npm update -g @google/gemini-cli %NPM_FLAGS%
 set gemini_error=!errorlevel!
@@ -147,7 +199,7 @@ echo         UPDATING OPENAI CLI
 echo ================================================
 echo.
 call :CHECK_AND_INSTALL "openai" "OpenAI CLI"
-if %errorlevel% neq 0 goto :MAIN_MENU
+if !errorlevel! neq 0 goto :MAIN_MENU
 echo.
 call npm update -g openai %NPM_FLAGS%
 set openai_error=!errorlevel!
@@ -161,6 +213,29 @@ echo.
 pause
 goto :MAIN_MENU
 
+:UPDATE_QWEN
+cls
+echo ================================================
+echo         UPDATING QWEN CLI
+echo ================================================
+echo.
+call :CHECK_AND_INSTALL_QWEN
+if !errorlevel! neq 0 goto :MAIN_MENU
+echo.
+echo [INFO] Updating Qwen CLI via npm install -g @qwen-code/qwen-code@latest
+echo [INFO] This can take a while because npm may download additional dependencies.
+call npm install -g @qwen-code/qwen-code@latest %QWEN_NPM_FLAGS%
+set qwen_error=!errorlevel!
+echo.
+if !qwen_error! equ 0 (
+    echo [SUCCESS] Qwen CLI updated successfully!
+) else (
+    echo [ERROR] Failed to update Qwen CLI - Error Code: !qwen_error!
+)
+echo.
+pause
+goto :MAIN_MENU
+
 :UPDATE_OPENCODE
 cls
 echo ================================================
@@ -168,7 +243,7 @@ echo         UPDATING OPENCODE
 echo ================================================
 echo.
 call :CHECK_AND_INSTALL "opencode-ai" "OpenCode"
-if %errorlevel% neq 0 goto :MAIN_MENU
+if !errorlevel! neq 0 goto :MAIN_MENU
 echo.
 call npm update -g opencode-ai %NPM_FLAGS%
 set opencode_error=!errorlevel!
@@ -189,10 +264,10 @@ echo         UPDATING ALL TOOLS
 echo ================================================
 echo.
 
-echo [1/4] Updating Claude Code...
+echo [1/5] Updating Claude Code...
 echo ------------------------------------------------
 call :CHECK_AND_INSTALL "@anthropic-ai/claude-code" "Claude Code"
-if %errorlevel% equ 0 (
+if !errorlevel! equ 0 (
     call npm update -g @anthropic-ai/claude-code %NPM_FLAGS%
     set claude_error=!errorlevel!
     if !claude_error! equ 0 (
@@ -206,10 +281,10 @@ if %errorlevel% equ 0 (
 )
 echo.
 
-echo [2/4] Updating Gemini CLI...
+echo [2/5] Updating Gemini CLI...
 echo ------------------------------------------------
 call :CHECK_AND_INSTALL "@google/gemini-cli" "Gemini CLI"
-if %errorlevel% equ 0 (
+if !errorlevel! equ 0 (
     call npm update -g @google/gemini-cli %NPM_FLAGS%
     set gemini_error=!errorlevel!
     if !gemini_error! equ 0 (
@@ -223,10 +298,10 @@ if %errorlevel% equ 0 (
 )
 echo.
 
-echo [3/4] Updating OpenAI CLI...
+echo [3/5] Updating OpenAI CLI...
 echo ------------------------------------------------
 call :CHECK_AND_INSTALL "openai" "OpenAI CLI"
-if %errorlevel% equ 0 (
+if !errorlevel! equ 0 (
     call npm update -g openai %NPM_FLAGS%
     set openai_error=!errorlevel!
     if !openai_error! equ 0 (
@@ -240,10 +315,29 @@ if %errorlevel% equ 0 (
 )
 echo.
 
-echo [4/4] Updating OpenCode...
+echo [4/5] Updating Qwen CLI...
+echo ------------------------------------------------
+call :CHECK_AND_INSTALL_QWEN
+if !errorlevel! equ 0 (
+    echo [INFO] Updating Qwen CLI via npm install -g @qwen-code/qwen-code@latest
+    echo [INFO] This can take a while because npm may download additional dependencies.
+    call npm install -g @qwen-code/qwen-code@latest %QWEN_NPM_FLAGS%
+    set qwen_error=!errorlevel!
+    if !qwen_error! equ 0 (
+        echo [SUCCESS] Qwen CLI updated successfully!
+    ) else (
+        echo [ERROR] Failed to update Qwen CLI - Error Code: !qwen_error!
+    )
+) else (
+    set qwen_error=1
+    echo [SKIPPED] Qwen CLI was not installed.
+)
+echo.
+
+echo [5/5] Updating OpenCode...
 echo ------------------------------------------------
 call :CHECK_AND_INSTALL "opencode-ai" "OpenCode"
-if %errorlevel% equ 0 (
+if !errorlevel! equ 0 (
     call npm update -g opencode-ai %NPM_FLAGS%
     set opencode_error=!errorlevel!
     if !opencode_error! equ 0 (
@@ -265,6 +359,7 @@ echo Summary:
 if !claude_error! equ 0 (echo - Claude Code: UP TO DATE) else (echo - Claude Code: FAILED/SKIPPED)
 if !gemini_error! equ 0 (echo - Gemini CLI: UP TO DATE) else (echo - Gemini CLI: FAILED/SKIPPED)
 if !openai_error! equ 0 (echo - OpenAI CLI: UP TO DATE) else (echo - OpenAI CLI: FAILED/SKIPPED)
+if !qwen_error! equ 0 (echo - Qwen CLI: UP TO DATE) else (echo - Qwen CLI: FAILED/SKIPPED)
 if !opencode_error! equ 0 (echo - OpenCode: UP TO DATE) else (echo - OpenCode: FAILED/SKIPPED)
 echo.
 pause
@@ -282,7 +377,8 @@ echo.
 echo   [1] Claude Code
 echo   [2] Gemini CLI
 echo   [3] OpenAI CLI
-echo   [4] OpenCode
+echo   [4] Qwen CLI
+echo   [5] OpenCode
 echo.
 set /p selections="Your selection: "
 echo.
@@ -290,13 +386,15 @@ echo.
 set update_claude=0
 set update_gemini=0
 set update_openai=0
+set update_qwen=0
 set update_opencode=0
 
 for %%i in (%selections%) do (
     if "%%i"=="1" set update_claude=1
     if "%%i"=="2" set update_gemini=1
     if "%%i"=="3" set update_openai=1
-    if "%%i"=="4" set update_opencode=1
+    if "%%i"=="4" set update_qwen=1
+    if "%%i"=="5" set update_opencode=1
 )
 
 cls
@@ -309,7 +407,7 @@ if !update_claude! equ 1 (
     echo [1/?] Updating Claude Code...
     echo ------------------------------------------------
     call :CHECK_AND_INSTALL "@anthropic-ai/claude-code" "Claude Code"
-    if %errorlevel% equ 0 (
+    if !errorlevel! equ 0 (
         call npm update -g @anthropic-ai/claude-code %NPM_FLAGS%
         set claude_error=!errorlevel!
         if !claude_error! equ 0 (
@@ -328,7 +426,7 @@ if !update_gemini! equ 1 (
     echo [2/?] Updating Gemini CLI...
     echo ------------------------------------------------
     call :CHECK_AND_INSTALL "@google/gemini-cli" "Gemini CLI"
-    if %errorlevel% equ 0 (
+    if !errorlevel! equ 0 (
         call npm update -g @google/gemini-cli %NPM_FLAGS%
         set gemini_error=!errorlevel!
         if !gemini_error! equ 0 (
@@ -347,7 +445,7 @@ if !update_openai! equ 1 (
     echo [3/?] Updating OpenAI CLI...
     echo ------------------------------------------------
     call :CHECK_AND_INSTALL "openai" "OpenAI CLI"
-    if %errorlevel% equ 0 (
+    if !errorlevel! equ 0 (
         call npm update -g openai %NPM_FLAGS%
         set openai_error=!errorlevel!
         if !openai_error! equ 0 (
@@ -362,11 +460,32 @@ if !update_openai! equ 1 (
     echo.
 )
 
+if !update_qwen! equ 1 (
+    echo [4/?] Updating Qwen CLI...
+    echo ------------------------------------------------
+    call :CHECK_AND_INSTALL_QWEN
+    if !errorlevel! equ 0 (
+        echo [INFO] Updating Qwen CLI via npm install -g @qwen-code/qwen-code@latest
+        echo [INFO] This can take a while because npm may download additional dependencies.
+        call npm install -g @qwen-code/qwen-code@latest %QWEN_NPM_FLAGS%
+        set qwen_error=!errorlevel!
+        if !qwen_error! equ 0 (
+            echo [SUCCESS] Qwen CLI updated successfully!
+        ) else (
+            echo [ERROR] Failed to update Qwen CLI - Error Code: !qwen_error!
+        )
+    ) else (
+        set qwen_error=1
+        echo [SKIPPED] Qwen CLI was not installed.
+    )
+    echo.
+)
+
 if !update_opencode! equ 1 (
-    echo [4/?] Updating OpenCode...
+    echo [5/?] Updating OpenCode...
     echo ------------------------------------------------
     call :CHECK_AND_INSTALL "opencode-ai" "OpenCode"
-    if %errorlevel% equ 0 (
+    if !errorlevel! equ 0 (
         call npm update -g opencode-ai %NPM_FLAGS%
         set opencode_error=!errorlevel!
         if !opencode_error! equ 0 (
@@ -400,6 +519,11 @@ if !update_openai! equ 1 (
     if !openai_error! equ 0 (echo - OpenAI CLI: UP TO DATE) else (echo - OpenAI CLI: FAILED/SKIPPED)
 ) else (
     echo - OpenAI CLI: SKIPPED
+)
+if !update_qwen! equ 1 (
+    if !qwen_error! equ 0 (echo - Qwen CLI: UP TO DATE) else (echo - Qwen CLI: FAILED/SKIPPED)
+) else (
+    echo - Qwen CLI: SKIPPED
 )
 if !update_opencode! equ 1 (
     if !opencode_error! equ 0 (echo - OpenCode: UP TO DATE) else (echo - OpenCode: FAILED/SKIPPED)

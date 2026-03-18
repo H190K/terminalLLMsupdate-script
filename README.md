@@ -6,9 +6,9 @@
 
 ## 😏 About This Script
 
-A 50-line wrapper around `npm update` that I spent more time writing the README for than the actual code. You definitely need this instead of just typing those commands yourself.
+A small interactive wrapper around npm that updates most tools with `npm update -g` and handles Qwen CLI with `npm install -g @qwen-code/qwen-code@latest`. You definitely need this instead of just typing those commands yourself.
 
-Remember when you needed to update 4 packages and it took like 30 seconds? Tragic. Now it only takes 28 seconds with this completely unnecessary script. You're welcome, I guess?
+Remember when you needed to update 5 packages and it took like 30 seconds? Tragic. Now it only takes 28 seconds with this completely unnecessary script. You're welcome, I guess?
 
 ---
 
@@ -33,7 +33,8 @@ Remember when you needed to update 4 packages and it took like 30 seconds? Tragi
 | **Claude Code** | Anthropic's Claude AI coding assistant | `@anthropic-ai/claude-code` |
 | **Gemini CLI** | Google's Gemini AI CLI | `@google/gemini-cli` |
 | **OpenAI CLI** | OpenAI's official CLI | `openai` |
-| **OpenCode** | Open source AI coding tool | `opencode` |
+| **Qwen CLI** | Qwen's official coding CLI | `@qwen-code/qwen-code` |
+| **OpenCode** | Open source AI coding tool | `opencode-ai` |
 
 ## 📦 Installation
 
@@ -41,6 +42,7 @@ Remember when you needed to update 4 packages and it took like 30 seconds? Tragi
 
 - **Node.js** and **npm** must be installed on your system
 - Download from [nodejs.org](https://nodejs.org/)
+- **Qwen CLI** requires **Node.js 20+**
 
 ### Windows
 
@@ -75,9 +77,10 @@ Select an option:
   [1] Update Claude Code
   [2] Update Gemini CLI
   [3] Update OpenAI CLI
-  [4] Update OpenCode
-  [5] Update ALL tools
-  [6] Choose multiple tools
+  [4] Update Qwen CLI
+  [5] Update OpenCode
+  [6] Update ALL tools
+  [7] Choose multiple tools
   [0] Exit
 
 ================================================
@@ -85,23 +88,23 @@ Select an option:
   Created by H190K
   GitHub: https://github.com/H190K/terminalLLMsupdate-script
 
-Enter your choice (0-6):
+Enter your choice (0-7):
 ```
 
 ### Menu Options
 
 | Option | Description |
 |--------|-------------|
-| **[1-4]** | Update a specific tool individually |
-| **[5]** | Update all 4 tools in sequence |
-| **[6]** | Select multiple tools to update (e.g., `1 3` for Claude + OpenAI) |
+| **[1-5]** | Update a specific tool individually |
+| **[6]** | Update all 5 tools in sequence |
+| **[7]** | Select multiple tools to update (e.g., `1 3 4` for Claude + OpenAI + Qwen) |
 | **[0]** | Exit the script |
 
 ## ⚠️ Important Notes
 
 ### Your Settings Are Safe!
 
-This script uses `npm update -g` which **only updates the program files**. Your custom settings are preserved:
+This script uses `npm update -g` for Claude Code, Gemini CLI, OpenAI CLI, and OpenCode. Qwen CLI uses `npm install -g @qwen-code/qwen-code@latest`. These commands **only update the program files**. Your custom settings are preserved:
 
 - ✅ API keys stored in config files
 - ✅ Environment variables
@@ -123,6 +126,20 @@ If you try to update a tool that isn't installed, the script will:
 - Install the package if you accept
 - Skip the tool if you decline
 
+### Qwen CLI Notes
+
+- Qwen CLI is installed and updated with `npm install -g @qwen-code/qwen-code@latest`
+- Qwen CLI requires Node.js 20 or newer
+- Qwen updates can take longer than the other tools because npm may download additional dependencies
+
+### Update Method
+
+- Claude Code: `npm update -g @anthropic-ai/claude-code`
+- Gemini CLI: `npm update -g @google/gemini-cli`
+- OpenAI CLI: `npm update -g openai`
+- Qwen CLI: `npm install -g @qwen-code/qwen-code@latest`
+- OpenCode: `npm update -g opencode-ai`
+
 ### Update Errors
 
 If an update fails, the script will:
@@ -139,17 +156,17 @@ Common reasons for update failures:
 
 ### Update All Tools
 ```
-Enter your choice (0-6): 5
+Enter your choice (0-7): 6
 ```
 
 ### Update Specific Tools
 ```
-Enter your choice (0-6): 1
+Enter your choice (0-7): 1
 ```
 
 ### Update Multiple Tools
 ```
-Enter your choice (0-6): 6
+Enter your choice (0-7): 7
 
 Your selection: 1 3 4
 ```
@@ -170,12 +187,13 @@ chmod +x macos-linux-LLMsupdate-script.sh
 - The script now offers to install missing packages automatically
 - Simply accept the prompt when asked if you want to install
 - You can also install manually:
-  ```bash
-  npm install -g @anthropic-ai/claude-code
-  npm install -g @google/gemini-cli
-  npm install -g openai
-  npm install -g opencode
-  ```
+```bash
+npm install -g @anthropic-ai/claude-code
+npm install -g @google/gemini-cli
+npm install -g openai
+npm install -g @qwen-code/qwen-code@latest
+npm install -g opencode-ai
+```
 
 ## 📄 License
 
